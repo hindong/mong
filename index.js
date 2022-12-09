@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const config = require('./config/key');
 const cookieParser = require('cookie-parser');
-
+const {auth} = require('./middleware/auth');
 
 
 app.use(express.json({extended: true}));
@@ -70,14 +70,39 @@ app.post('/api/users/login', (req, res) =>{
             .status(200)
             .json({loginSuccess: true, userId: user._id});
 
-
         });
-
     });
     });
+});
 
+app.get('/api/users/auth', auth ,(req, res) => {
+
+    //Authentication이 true라면
+    res.status(200).json({
+        _id: req.user._id,
+        isAdmin: req.user.role === 0 ? false : true,
+        isAuth: true,
+        email: req.user.email,
+        name: req.user.name,
+        lastname: req.user.lastname,
+        role: req.user.role,
+        image: req.user.image,
+    });
+});
+
+app.get('/api/users/logout', auth, (req, res) =>{
+
+    User.findOneAndUpdate({_id: req.user._id}, 
+    {token: ""},
+    (err, user)=> {
+        if(err) return res.json({success: false, err});
+        return res.status(200).send({
+            success:true,
+        });
+        }
+    );
 });
 
 app.listen(port, () => {
-    console.log(`Example app listening on port ${port}`)
-  })
+    console.log(`Example app listening on port ${port}`);
+  });
